@@ -86,7 +86,7 @@ th[aria-sort] button.sort{color:var(--ink)}th[aria-sort] button.sort .arr{opacit
 /* Phones keep old copies of pages. Ask the site for its current version (never cached) and, if this
    copy is older, reload once with ?v=<version> so the browser fetches the latest page. */
 (function () {
-  var MINE = "2026-11-28b";
+  var MINE = "2026-11-28c";
   try {
     fetch("version.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.version || v.version === MINE) return;
@@ -98,7 +98,7 @@ th[aria-sort] button.sort{color:var(--ink)}th[aria-sort] button.sort .arr{opacit
   } catch (e) {}
 })();
 </script>
-<script src="leagues.js?v=2026-11-28b"></script>
+<script src="leagues.js?v=2026-11-28c"></script>
 </head>
 <body>
 <nav class="sitenav" aria-label="Site"><div class="in"><a class="brand" href="index.html">Sleeper Tools</a><a href="defense.html">Defense Streamer</a><a href="power.html">Power Rankings</a><a href="weekly.html" aria-current="page">Weekly Rankings</a><a href="analysis.html">League Analysis</a><a href="trade.html">Trade Calculator</a><a href="odds.html">Playoff Odds</a></div></nav>
@@ -145,7 +145,7 @@ th[aria-sort] button.sort{color:var(--ink)}th[aria-sort] button.sort .arr{opacit
     <div><b>Sorting.</b> Tap any column header to sort by it, and tap again to flip the order. Tap # to go back to the rankings.</div>
   </section>
 </div>
-<script src="sleeper-core.js?v=2026-11-28b"></script>
+<script src="sleeper-core.js?v=2026-11-28c"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

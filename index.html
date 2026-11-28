@@ -33,7 +33,7 @@ footer{color:var(--muted);font-size:13px}
 /* Phones keep old copies of pages. Ask the site for its current version (never cached) and, if this
    copy is older, reload once with ?v=<version> so the browser fetches the latest page. */
 (function () {
-  var MINE = "2026-11-28b";
+  var MINE = "2026-11-28c";
   try {
     fetch("version.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.version || v.version === MINE) return;
@@ -66,7 +66,7 @@ footer{color:var(--muted);font-size:13px}
 </section>
 <footer>Not affiliated with Sleeper or the NFL. Data comes from Sleeper's public feeds.</footer>
 </div>
-<script src="leagues.js?v=2026-11-28b"></script>
+<script src="leagues.js?v=2026-11-28c"></script>
 <script>
 (function () {
   const L = window.SleeperLeagues, $ = (id) => document.getElementById(id);
