@@ -173,7 +173,7 @@ td .pill{display:inline-block;font-size:12px;font-weight:600;color:#fff;padding:
 /* Phones keep old copies of pages. Ask the site for its current version (never cached) and, if this
    copy is older, reload once with ?v=<version> so the browser fetches the latest page. */
 (function () {
-  var MINE = "2026-11-28b";
+  var MINE = "2026-11-28c";
   try {
     fetch("version.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.version || v.version === MINE) return;
@@ -185,7 +185,7 @@ td .pill{display:inline-block;font-size:12px;font-weight:600;color:#fff;padding:
   } catch (e) {}
 })();
 </script>
-<script src="leagues.js?v=2026-11-28b"></script>
+<script src="leagues.js?v=2026-11-28c"></script>
 </head>
 <body>
 <nav class="sitenav" aria-label="Site"><div class="in"><a class="brand" href="index.html">Sleeper Tools</a><a href="defense.html">Defense Streamer</a><a href="power.html" aria-current="page">Power Rankings</a><a href="weekly.html">Weekly Rankings</a><a href="analysis.html">League Analysis</a><a href="trade.html">Trade Calculator</a><a href="odds.html">Playoff Odds</a></div></nav>
@@ -239,7 +239,7 @@ td .pill{display:inline-block;font-size:12px;font-weight:600;color:#fff;padding:
   <div class="band" id="tierDlgBand"><span id="tierDlgTitle"></span><button type="button" id="tierDlgClose" aria-label="Close">×</button></div>
   <div class="body"><div class="range" id="tierDlgRange"></div><p class="desc" id="tierDlgDesc"></p><p class="who" id="tierDlgWho"></p></div>
 </dialog>
-<script src="sleeper-core.js?v=2026-11-28b"></script>
+<script src="sleeper-core.js?v=2026-11-28c"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

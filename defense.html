@@ -8,7 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* Layout idea: a scoreboard-style control strip on top, then three week-by-week leaderboards side by side. */
+/* Layout idea: a scoreboard-style control strip on top, then up to three week-by-week leaderboards side by side
+   (every week through 18 is computed; a week picker chooses which to show). */
 :root {
   --bg: #eef2f4;
   --surface: #ffffff;
@@ -75,8 +76,14 @@ input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 32px
 .banner.note { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
 .summary { font-size: 14px; color: var(--muted); }
 .summary b { color: var(--ink); }
+.weekpick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.weekpick .lbl { font-size: 14px; font-weight: 600; margin-right: 4px; }
+.weekpick button { min-height: 38px; padding: 4px 12px; font-weight: 600; font-size: 14px; }
+.weekpick button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.weekpick .tiny { margin-left: 4px; }
+.board h3 small.np { color: var(--warn-ink); }
 .boards { display: grid; gap: 14px; grid-template-columns: 1fr; }
-@media (min-width: 900px) { .boards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .boards { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); } }
 .board { padding: 0; overflow: hidden; }
 .board h3 { font-family: var(--display); font-size: 26px; margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
 .board h3 small { font-family: var(--body); font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 8px; }
@@ -111,7 +118,7 @@ tr.top td { background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
 /* Phones keep old copies of pages. Ask the site for its current version (never cached) and, if this
    copy is older, reload once with ?v=<version> so the browser fetches the latest page. */
 (function () {
-  var MINE = "2026-11-28b";
+  var MINE = "2026-11-28c";
   try {
     fetch("version.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.version || v.version === MINE) return;
@@ -123,14 +130,14 @@ tr.top td { background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
   } catch (e) {}
 })();
 </script>
-<script src="leagues.js?v=2026-11-28b"></script>
+<script src="leagues.js?v=2026-11-28c"></script>
 </head>
 <body>
 <nav class="sitenav" aria-label="Site"><div class="in"><a class="brand" href="index.html">Sleeper Tools</a><a href="defense.html" aria-current="page">Defense Streamer</a><a href="power.html">Power Rankings</a><a href="weekly.html">Weekly Rankings</a><a href="analysis.html">League Analysis</a><a href="trade.html">Trade Calculator</a><a href="odds.html">Playoff Odds</a></div></nav>
 <div class="wrap">
   <header>
     <h1>Defense Streamer</h1>
-    <p class="sub">A better way to stream Fantasy Defenses. How bad is the offense ? How good is the defense ? Do you have custom defensive scoring? This ranks every NFL defense for the next three weeks based on your preferences.</p>
+    <p class="sub">A better way to stream Fantasy Defenses. How bad is the offense ? How good is the defense ? Do you have custom defensive scoring? This ranks every NFL defense for every week through Week 18 based on your preferences. Pick up to three weeks to compare.</p>
   </header>
 
   <section class="panel controls" aria-label="Settings">
@@ -173,6 +180,7 @@ tr.top td { background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
 
   <section class="status" id="status" aria-live="polite"></section>
   <div class="summary" id="summary"></div>
+  <div class="weekpick" id="weekpick" role="group" aria-label="Weeks to show" hidden></div>
   <section class="boards" id="boards" aria-label="Weekly leaderboards"></section>
 
   <section class="panel explain">
@@ -349,7 +357,7 @@ async function fetchSchedule(net, season) {
 /* Everything the page needs, with no DOM. `net.fetchJson(url)` is real or sample data. */
 async function computeAll(net, leagueId, opts, progress) {
   const say = progress || (() => {});
-  const { pct, freeOnly, shrinkDef = 4, shrinkOpp = 4, nWeeks = 3 } = opts;
+  const { pct, freeOnly, shrinkDef = 4, shrinkOpp = 4, lastWeek = 18 } = opts;
   const notes = [];
   say("Reading your league…", 1, 4);
   const league = await net.fetchJson(`${API}/league/${leagueId}`);
@@ -360,7 +368,7 @@ async function computeAll(net, leagueId, opts, progress) {
   let target = Math.trunc(num(state.week, 1)) || 1;
   if (state.season_type && state.season_type !== "regular") target = 1;
   const weeksAhead = [];
-  for (let w = target; w < target + nWeeks && w <= 18; w++) weeksAhead.push(w);
+  for (let w = target; w <= lastWeek; w++) weeksAhead.push(w);        // every week from now through week 18
   const past = [];
   for (let w = 1; w < target; w++) past.push(w);
   if (!past.length) throw new Error("No completed weeks yet to learn from (it is Week 1). Try again after the first games.");
@@ -402,7 +410,7 @@ async function computeAll(net, leagueId, opts, progress) {
   let blend = Object.keys(proj).length ? wt.blend : 0;
   if (!Object.keys(proj).length) {
     if (wt.blend > 0) notes.push("Sleeper projections were unavailable, so the ranking uses the history model only.");
-  } else if (Object.keys(proj).length < weeksAhead.length) notes.push("Sleeper projections are missing for some weeks; those weeks use the history model only.");
+  }
 
   const owners = {};
   try {
@@ -421,7 +429,8 @@ async function computeAll(net, leagueId, opts, progress) {
   for (const w of weeksAhead) for (const t of Object.keys(sched[w] || {})) teams.add(t);
   const rows = rankDefenses(fit, sched, weeksAhead, teams, owners, proj, blend, wt.oppWeight);
   const boards = weekBoards(rows, weeksAhead.length, freeOnly && Object.keys(owners).length > 0);
-  return { leagueName: league.name || "Your league", weeksAhead, past, nGames: games.length, mu: fit.mu, blend, oppWeight: wt.oppWeight, boards, notes };
+  const noProj = weeksAhead.filter((w) => !proj[w]);                  // shown on those weeks' boards
+  return { leagueName: league.name || "Your league", weeksAhead, past, nGames: games.length, mu: fit.mu, blend, oppWeight: wt.oppWeight, boards, notes, noProj };
 }
 /* ======================= CORE END ======================= */
 
@@ -516,14 +525,34 @@ if (typeof document !== "undefined") {
       res.notes.map((t) => banner("note", t)).join("");
     const blendPct = Math.round(res.blend * 100);
     $("summary").innerHTML = `<b>${esc(res.leagueName)}</b> · learned from weeks ${res.past[0]}–${res.past[res.past.length - 1]} (${res.nGames} defense games) · average defense score ${res.mu.toFixed(1)} per game · ${100 - blendPct}% history model / ${blendPct}% Sleeper projection`;
-    $("boards").innerHTML = res.boards.map((bd, wi) => {
+    // keep the weeks picked before if they're still ahead; otherwise show the next three
+    shown = shown.filter((w) => res.weeksAhead.includes(w));
+    if (!shown.length) shown = res.weeksAhead.slice(0, 3);
+    $("weekpick").hidden = false;
+    $("weekpick").innerHTML = `<span class="lbl">Weeks to show</span>` + res.weeksAhead.map((w) =>
+      `<button type="button" data-w="${w}" aria-pressed="${shown.includes(w)}">Wk ${w}</button>`).join("") + `<span class="tiny">Pick up to 3</span>`;
+    const order = res.weeksAhead.map((w, wi) => ({ w, wi })).filter((x) => shown.includes(x.w));
+    $("boards").style.setProperty("--cols", Math.max(1, order.length));
+    $("boards").innerHTML = order.map(({ wi }) => res.boards[wi]).map((bd, k) => {
+      const wi = order[k].wi;
       const body = bd.slice(0, n).map((it, i) => `<tr class="${i < 3 ? "top" : ""}"><td class="team"><span class="rk">${i + 1}.</span><span class="tm">${esc(it.row.team)}</span><span class="vs">v ${esc(it.cell.opp)}</span></td>` +
         `<td class="score">${it.cell.val.toFixed(1)}</td><td><span class="pill ${it.row.owner ? "" : "free"}" title="${esc(it.row.owner || "Free")}">${esc(it.row.owner || "Free")}</span></td></tr>`).join("");
-      return `<div class="panel board"><h3>Week ${res.weeksAhead[wi]}${wi === 0 ? "<small>this week</small>" : ""}</h3><div style="overflow-x:auto"><table><thead><tr><th>Rank</th><th class="num">Score</th><th>Avail</th></tr></thead><tbody>${body || '<tr><td colspan="3" class="tiny">No defenses to show.</td></tr>'}</tbody></table></div></div>`;
+      const np = res.noProj && res.noProj.includes(res.weeksAhead[wi]) ? `<small class="np" title="Sleeper has no projections for this week yet, so it uses the history model only">history model only</small>` : "";
+      return `<div class="panel board"><h3>Week ${res.weeksAhead[wi]}${wi === 0 ? "<small>this week</small>" : ""}${np}</h3><div style="overflow-x:auto"><table><thead><tr><th>Rank</th><th class="num">Score</th><th>Avail</th></tr></thead><tbody>${body || '<tr><td colspan="3" class="tiny">No defenses to show.</td></tr>'}</tbody></table></div></div>`;
     }).join("");
   }
 
-  let last = null, lastSample = true;
+  let last = null, lastSample = true, shown = [];
+  // tap a week to show or hide it; a 4th week replaces the earliest one picked
+  $("weekpick").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-w]"); if (!b || !last) return;
+    const w = +b.dataset.w, i = shown.indexOf(w);
+    if (i >= 0) { if (shown.length > 1) shown.splice(i, 1); }
+    else { shown.push(w); if (shown.length > 3) shown.shift(); }
+    store.set("defenseStreamerWeeks", JSON.stringify(shown));
+    render(last, lastSample);
+  });
+  try { const sw = JSON.parse(store.get("defenseStreamerWeeks") || "[]"); if (Array.isArray(sw)) shown = sw.map(Number).filter(Boolean).slice(0, 3); } catch (e) {}
   async function go(sample) {
     if (busy) return;
     const id = $("leagueId").value.trim();
